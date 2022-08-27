@@ -9,8 +9,8 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf 
 from keras.models import Sequential 
 from keras.layers import Dense
-
-
+from keras.callbacks import EarlyStopping
+from sklearn.metrics import confusion_matrix, classification_report
 #read data in csv file 
 bc = pd.read_csv("Breast_Cancer.csv")
 #print(bc.head())
@@ -31,7 +31,7 @@ print(bc.info())
 
 x = bc.drop('Status',axis = 1)
 y = bc.Status
-
+print(y[:10])
 #normalise 
 scaler_x = MinMaxScaler()
 X_scaled = scaler_x.fit_transform(x)
@@ -49,28 +49,52 @@ X_train,X_test,Y_train,Y_test = train_test_split(X_scaled,y,test_size=0.2,shuffl
 
 #model 
 model = Sequential()
-model.add(Dense(25,input_dim =14,activation='relu'))
-model.add(Dense(40,activation='relu'))
-model.add(Dense(1,activation='linear'))
+model.add(Dense(16,input_shape =(x.shape[1],len(x.columns)),activation='relu'))
+model.add(Dense(16,activation='relu'))
+model.add(Dense(1,activation='sigmoid'))
+model.summary()
 
-model.compile(optimizer='adam',loss = 'mean_squared_error',metrics=['accuracy'])
 
-fit = model.fit(X_train,Y_train,epochs=50,batch_size=5,verbose =1,validation_split=0.2)
+model.compile(optimizer='adam',loss = 'binary_crossentropy',metrics=['accuracy'])
+
+# early stopping callback
+# This callback will stop the training when there is no improvement in  
+# the validation loss for 10 consecutive epochs.  
+es = EarlyStopping(monitor='val_accuracy', 
+                                   mode='max', # don't minimize the accuracy!
+                                   patience=10,
+                                   restore_best_weights=True)
+
+fit = model.fit(X_train,Y_train,epochs=50,batch_size=5,verbose =1,validation_split=0.2,callbacks=[es],shuffle=True)
 # print(fit)
 
-# print(fit.history.keys())
-# plt.plot(fit.history['loss'])
-# plt.plot(fit.history['val_loss'])
-# plt.title('Model Loss Progression During Training/Validation')
-# plt.ylabel('Training and Validation Losses')
-# plt.xlabel('Epoch Number')
-# plt.legend(['Training Loss', 'Validation Loss'])
-# plt.show()
+print(fit.history.keys())
+plt.plot(fit.history['loss'])
+plt.plot(fit.history['val_loss'])
+plt.title('Model Loss Progression During Training/Validation')
+plt.ylabel('Training and Validation Losses')
+plt.xlabel('Epoch Number')
+plt.legend(['Training Loss', 'Validation Loss'])
+plt.show()
+
+#classification report
+
+preds = np.round(model.predict(X_test),0)
+print(confusion_matrix(Y_test, preds))
+
+print(classification_report(Y_test, preds))
 
 sample = np.array([[19,0,2,1,3,2,3,1,128,1,1,25,12,100]])
 predict = model.predict(sample)
-print('status:',predict)
+print('Predicted Status For Ramya:',predict)
 
 
 
+#serialize model to json
+model_json = model.to_json()
+with open("model.json","w") as json_file:
+  json_file.write(model_json)
+#serialize weight to HDF5
+model.save_weights("model.h5")
+print("Saved model to disk")
 
