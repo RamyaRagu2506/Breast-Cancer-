@@ -72,8 +72,8 @@ fit = model.fit(X_train,Y_train,epochs=50,batch_size=5,verbose =1,validation_spl
 # print(fit)
 
 print(fit.history.keys())
-plt.plot(fit.history['loss'])
-plt.plot(fit.history['val_loss'])
+plt.plot(fit.history['accuracy'])
+plt.plot(fit.history['val_accuracy'])
 plt.title('Model Loss Progression During Training/Validation')
 plt.ylabel('Training and Validation Losses')
 plt.xlabel('Epoch Number')
