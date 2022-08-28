@@ -8,13 +8,13 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import tensorflow as tf 
 from keras.models import Sequential 
-from keras.layers import Dense
+from keras import Input
+from keras.layers import Dense, SimpleRNN
 from keras.callbacks import EarlyStopping
 from sklearn.metrics import confusion_matrix, classification_report
 #read data in csv file 
 bc = pd.read_csv("Breast_Cancer.csv")
 #print(bc.head())
-
 
 
 print(bc.info())
@@ -32,6 +32,7 @@ print(bc.info())
 x = bc.drop('Status',axis = 1)
 y = bc.Status
 print(y[:10])
+
 #normalise 
 scaler_x = MinMaxScaler()
 X_scaled = scaler_x.fit_transform(x)
@@ -49,7 +50,9 @@ X_train,X_test,Y_train,Y_test = train_test_split(X_scaled,y,test_size=0.2,shuffl
 
 #model 
 model = Sequential()
-model.add(Dense(16,input_shape =(x.shape[1],len(x.columns)),activation='relu'))
+model.add(Input(shape=(14,1), name='Input-Layer'))
+# model.add(Input(16,input_shape =(x.shape[1],len(x.columns)),activation='relu'))
+model.add(SimpleRNN(units=1, activation='tanh', name='Hidden-Recurrent-Layer'))
 model.add(Dense(16,activation='relu'))
 model.add(Dense(1,activation='sigmoid'))
 model.summary()
